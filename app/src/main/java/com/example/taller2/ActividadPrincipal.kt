@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -67,6 +68,8 @@ fun ActividadPrincipalScreen(
 ) {
     var nombre by remember { mutableStateOf("") } //Nombre ingresado en el campo de texto
     var nombreGuardado by remember { mutableStateOf(nombreInicial) } //Nombre que se mostrará
+    var isLoading by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -105,9 +108,34 @@ fun ActividadPrincipalScreen(
         Button(onClick = { onNavigate() }) {
             Text(text = "Ir a Configuración")
         }
+
+        //Botón para iniciar tarea en segundo plano
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            if (!isLoading) { //Solo iniciar si no está en carga
+                isLoading = true
+                progress = 0 //Reiniciar el progreso
+                NetworkTask(object : OnTaskCompleted {
+                    override fun onTaskComplete(progressValue: Int) {
+                        progress = progressValue
+                        if (progress >= 100) {
+                            isLoading = false //Finalizar la carga
+                        }
+                    }
+                }).execute() //Crear una nueva instancia cada vez
+            }
+        }) {
+            Text(text = "Iniciar Tarea")
+        }
+
+        //Indicador de progreso
+        if (isLoading) {
+            Spacer(modifier = Modifier.height(16.dp))
+            CircularProgressIndicator(progress = progress / 100f)
+            Text(text = "Progreso: $progress%")
+        }
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun ActividadPrincipalScreenPreview() {
